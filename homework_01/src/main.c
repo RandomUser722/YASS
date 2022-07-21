@@ -22,11 +22,11 @@ void packSudoku(const uint8_t *grid, char *raw);
 int errorHandler(error_t e);
 void convertSudokuToNumbers(uint8_t *sudoku);
 void convertSudokuToASCII(uint8_t *sudoku);
-
+error_t SolveSudoku(const char *Grid);
 
 int main(int argc, char** argv){
 	checkArguments(argc, argv);
-	uint8_t sudoku[81];					// sudoku without formatting characters
+
 	char sudoku_raw[SUDOKU_RAW_LEN];	// sudoku with formatting characters
 	error_t e;
 
@@ -35,31 +35,41 @@ int main(int argc, char** argv){
 		if( e != ERR_OK){
 			errorHandler(e);
 		}
-
-		e = formatChecker_checkSudoku(sudoku_raw);
-		if(e != ERR_OK){
-			errorHandler(e);
-		}
-
-		unpackSudoku(sudoku_raw, sudoku);
-		convertSudokuToNumbers(sudoku);
-		e = solver_solveSudoku(sudoku);
-
-		if(solvabilityOnly){
-			if( e==ERR_OK){
-				printf("solvable\n");
-				fflush(stdout);
-			}else{
-				printf("unsolvable\n");
-				fflush(stdout);
-			}
-		}else{
-			convertSudokuToASCII(sudoku);
-			packSudoku(sudoku, sudoku_raw);
-			USART_PrintSudokuGrid(sudoku_raw, SUDOKU_ROW_LENGTH);
-		}
+		SolveSudoku(sudoku_raw);	// @todo check return value
 	}
 	return ERR_OK;
+}
+
+error_t SolveSudoku(const char *Grid){
+	uint8_t sudoku[81];					// sudoku without formatting characters
+	error_t e;
+	char sudoku_raw[SUDOKU_RAW_LEN];	// sudoku with formatting characters
+
+	memcpy((void*)sudoku_raw, (const void*) Grid, SUDOKU_RAW_LEN);
+
+	e = formatChecker_checkSudoku(sudoku_raw);
+	if(e != ERR_OK){
+		errorHandler(e);
+	}
+
+	unpackSudoku(sudoku_raw, sudoku);
+	convertSudokuToNumbers(sudoku);
+	e = solver_solveSudoku(sudoku);
+
+	if(solvabilityOnly){
+		if( e==ERR_OK){
+			printf("solvable\n");
+			fflush(stdout);
+		}else{
+			printf("unsolvable\n");
+			fflush(stdout);
+		}
+	}else{
+		convertSudokuToASCII(sudoku);
+		packSudoku(sudoku, sudoku_raw);
+		USART_PrintSudokuGrid(sudoku_raw, SUDOKU_ROW_LENGTH);	// @todo check return value
+	}
+	return e;
 }
 
 /**
